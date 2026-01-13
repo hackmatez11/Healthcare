@@ -129,7 +129,7 @@ export default function CompleteProfile() {
     )
   }
 
- const qrUrl = user ? `https://fabulous-croissant-c99d9a.netlify.app/index.html?id=${user.id}` : ""
+ const qrUrl = user ? `https://hackmatez11.github.io/QR//index.html?id=${user.id}` : ""
 
   
   return (
