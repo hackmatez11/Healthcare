@@ -138,18 +138,10 @@ export default function SignalAnalysis() {
       <PageHeader
         icon={Activity}
         title="Signal Analysis"
-        description="AI-powered EEG & audio signal interpretation with explainability"
+        description="AI-powered EEG signal interpretation with explainability"
       />
 
       <Tabs defaultValue="eeg" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="eeg">
-            <Brain className="w-4 h-4 mr-2" /> EEG Analysis
-          </TabsTrigger>
-          <TabsTrigger value="audio">
-            <Waves className="w-4 h-4 mr-2" /> Audio Analysis
-          </TabsTrigger>
-        </TabsList>
 
         {/* ================= EEG TAB ================= */}
         <TabsContent value="eeg">
@@ -339,21 +331,6 @@ export default function SignalAnalysis() {
               </ResponsiveContainer>
             </motion.div>
           )}
-        </TabsContent>
-
-        {/* ================= AUDIO TAB ================= */}
-        <TabsContent value="audio">
-          <div className="bg-card p-10 rounded-2xl border text-center">
-            <Waves className="w-12 h-12 mx-auto text-primary mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Audio Biomarker Analysis</h3>
-            <p className="text-muted-foreground mb-6">
-              Upload speech or respiratory audio for AI-based health screening
-            </p>
-            <Button>
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Audio
-            </Button>
-          </div>
         </TabsContent>
       </Tabs>
     </Layout>
