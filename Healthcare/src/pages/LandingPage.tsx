@@ -75,12 +75,12 @@ const LandingPage = () => {
               </span>
             </h1>
             <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10">
-              Experience the future of healthcare with AI-powered diagnostics, 
+              Experience the future of healthcare with AI-powered diagnostics,
               instant consultations, and personalized health insights—all in one platform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="gradient-primary text-lg px-8 py-6"
               >
                 Get Started Free
@@ -173,7 +173,7 @@ const LandingPage = () => {
                 Everything You Need for Better Health
               </h2>
               <p className="text-muted-foreground text-lg mb-8">
-                MedCare AI combines cutting-edge technology with healthcare expertise 
+                MedCare AI combines cutting-edge technology with healthcare expertise
                 to provide you with comprehensive health management tools.
               </p>
               <ul className="space-y-4">
@@ -225,16 +225,16 @@ const LandingPage = () => {
               Join thousands of users who trust MedCare AI for their healthcare needs.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="bg-card text-foreground hover:bg-card/90 text-lg px-8"
               >
                 Sign In (Demo)
               </Button>
               <Link to="/signup">
-                <Button 
-                  size="lg" 
-                  variant="outline" 
+                <Button
+                  size="lg"
+                  variant="outline"
                   className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 text-lg px-8"
                 >
                   Create Free Account

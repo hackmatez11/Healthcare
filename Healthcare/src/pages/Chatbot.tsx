@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { MessageSquare, Send, Bot, User, Sparkles } from "lucide-react";
+import { MessageSquare, Send, Bot, User, Sparkles, AlertCircle } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { sendMessageToGemini } from "@/services/geminiService";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: string;
@@ -20,6 +22,8 @@ const quickQuestions = [
   "How to manage high blood pressure?",
   "When should I see a doctor for headaches?",
   "What vitamins should I take daily?",
+  "How can I improve my sleep quality?",
+  "What are healthy eating habits?",
 ];
 
 export default function Chatbot() {
@@ -27,14 +31,25 @@ export default function Chatbot() {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm your AI medical assistant. I can help answer general health questions, provide guidance on common symptoms, and help you understand when to seek professional medical care. How can I assist you today?",
+      content: "Hello! I'm your AI medical assistant powered by Google Gemini. I can help answer general health questions, provide guidance on common symptoms, and help you understand when to seek professional medical care. How can I assist you today?",
       timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
-  const handleSend = () => {
+
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMessage: Message = {
@@ -48,17 +63,44 @@ export default function Chatbot() {
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Get conversation history (last 10 messages for context)
+      const conversationHistory = messages.slice(-10).map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+
+      // Send message to Gemini
+      const response = await sendMessageToGemini(input, conversationHistory);
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "Thank you for your question. Based on the symptoms you've described, I recommend consulting with a healthcare professional for a proper diagnosis. In the meantime, make sure to stay hydrated and get plenty of rest. Would you like me to help you book an appointment with a specialist?",
+        content: response,
         timestamp: new Date(),
       };
+
       setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+
+      toast({
+        title: "Error",
+        description: "Failed to get response from AI. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleQuickQuestion = (question: string) => {
@@ -70,8 +112,9 @@ export default function Chatbot() {
       <PageHeader
         icon={MessageSquare}
         title="Medical Q&A Chatbot"
-        description="Get instant answers to your health questions from our AI assistant."
+        description="Get instant answers to your health questions from our AI assistant powered by Google Gemini."
       />
+
 
       <div className="grid lg:grid-cols-4 gap-6">
         {/* Chat Area */}
@@ -111,7 +154,7 @@ export default function Chatbot() {
                           : "gradient-primary text-primary-foreground"
                       )}
                     >
-                      <p className="text-sm leading-relaxed">{message.content}</p>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                       <p className="text-xs opacity-60 mt-2">
                         {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </p>
@@ -136,6 +179,7 @@ export default function Chatbot() {
                     </div>
                   </motion.div>
                 )}
+                <div ref={scrollRef} />
               </div>
             </ScrollArea>
 

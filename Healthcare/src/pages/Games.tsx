@@ -1,10 +1,15 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Gamepad2, Trophy, Target, Zap, Timer, Users, Star, Play, Lock } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { MentalHealthGames, GameType } from "@/components/mental-health/MentalHealthGames";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const games = [
   {
@@ -72,6 +77,40 @@ const achievements = [
 ];
 
 export default function Games() {
+  const [gameModalOpen, setGameModalOpen] = useState(false);
+  const [selectedGame, setSelectedGame] = useState<GameType | null>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const handleGameClick = (gameId: number) => {
+    // Map game IDs to game types
+    const gameMap: { [key: number]: GameType } = {
+      1: 'memory',
+      2: 'breathing',
+      3: 'affirmation', // Step Counter Race -> Affirmation Builder
+    };
+
+    const gameType = gameMap[gameId];
+    if (gameType) {
+      setSelectedGame(gameType);
+      setGameModalOpen(true);
+    } else {
+      toast({
+        title: "Coming Soon!",
+        description: "This game will be available in a future update.",
+      });
+    }
+  };
+
+  const handleGameComplete = () => {
+    setGameModalOpen(false);
+    setSelectedGame(null);
+    toast({
+      title: "Great job!",
+      description: "You completed the game!",
+    });
+  };
+
   return (
     <Layout>
       <PageHeader
@@ -99,10 +138,11 @@ export default function Games() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.1 }}
+                  onClick={() => game.unlocked && handleGameClick(game.id)}
                   className={cn(
                     "relative p-5 rounded-xl border-2 transition-all",
                     game.unlocked
-                      ? "border-border hover:border-primary cursor-pointer"
+                      ? "border-border hover:border-primary cursor-pointer hover:shadow-lg"
                       : "border-border/50 opacity-60"
                   )}
                 >
@@ -132,7 +172,13 @@ export default function Games() {
                     </div>
                   </div>
                   {game.unlocked && (
-                    <Button className="w-full mt-4 gradient-primary text-primary-foreground">
+                    <Button
+                      className="w-full mt-4 gradient-primary text-primary-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGameClick(game.id);
+                      }}
+                    >
                       <Play className="w-4 h-4 mr-2" />
                       Play Now
                     </Button>
@@ -285,10 +331,10 @@ export default function Games() {
                       user.rank === 1
                         ? "bg-warning text-warning-foreground"
                         : user.rank === 2
-                        ? "bg-muted-foreground text-muted"
-                        : user.rank === 3
-                        ? "bg-coral text-coral-foreground"
-                        : "bg-muted text-muted-foreground"
+                          ? "bg-muted-foreground text-muted"
+                          : user.rank === 3
+                            ? "bg-coral text-coral-foreground"
+                            : "bg-muted text-muted-foreground"
                     )}
                   >
                     {user.rank}
@@ -301,6 +347,26 @@ export default function Games() {
           </div>
         </motion.div>
       </div>
+
+      {/* Game Modal */}
+      <Dialog open={gameModalOpen} onOpenChange={setGameModalOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedGame === 'memory' && 'Memory Match Game'}
+              {selectedGame === 'breathing' && 'Breathing Bubble Game'}
+              {selectedGame === 'affirmation' && 'Affirmation Builder'}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedGame && (
+            <MentalHealthGames
+              gameType={selectedGame}
+              userId={user?.id}
+              onGameComplete={handleGameComplete}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
