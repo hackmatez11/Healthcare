@@ -6,7 +6,7 @@ const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 // Allow the key if it exists and is NOT the specific placeholder
 const isValidKey = apiKey && apiKey !== 'your_gemini_api_key_here';
 const genAI = isValidKey ? new GoogleGenerativeAI(apiKey) : null;
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-3-flash-preview';
 
 // System prompt for medical Q&A
 const MEDICAL_SYSTEM_PROMPT = `You are a helpful and knowledgeable medical AI assistant. Your role is to:
