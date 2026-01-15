@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { sendMessageToGemini } from "@/services/geminiService";
+import { sendMessageToRAG } from "@/services/ragChatbotService";
 import { useToast } from "@/hooks/use-toast";
 
 interface Message {
@@ -31,7 +31,7 @@ export default function Chatbot() {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm your AI medical assistant powered by Google Gemini. I can help answer general health questions, provide guidance on common symptoms, and help you understand when to seek professional medical care. How can I assist you today?",
+      content: "Hello! I'm your AI medical assistant powered by RAG (Retrieval-Augmented Generation) with Groq. I can help answer medical questions based on verified medical literature. How can I assist you today?",
       timestamp: new Date(),
     },
   ]);
@@ -64,14 +64,8 @@ export default function Chatbot() {
     setIsTyping(true);
 
     try {
-      // Get conversation history (last 10 messages for context)
-      const conversationHistory = messages.slice(-10).map(msg => ({
-        role: msg.role,
-        content: msg.content,
-      }));
-
-      // Send message to Gemini
-      const response = await sendMessageToGemini(input, conversationHistory);
+      // Send message to RAG backend
+      const response = await sendMessageToRAG(input);
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -87,7 +81,7 @@ export default function Chatbot() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
+        content: "I apologize, but I'm having trouble processing your request right now. Please make sure the RAG backend is running and try again.",
         timestamp: new Date(),
       };
 
@@ -95,7 +89,7 @@ export default function Chatbot() {
 
       toast({
         title: "Error",
-        description: "Failed to get response from AI. Please try again.",
+        description: "Failed to get response from RAG chatbot. Is the Flask backend running?",
         variant: "destructive",
       });
     } finally {
@@ -112,7 +106,7 @@ export default function Chatbot() {
       <PageHeader
         icon={MessageSquare}
         title="Medical Q&A Chatbot"
-        description="Get instant answers to your health questions from our AI assistant powered by Google Gemini."
+        description="Get instant answers to your health questions from our RAG-powered AI assistant using verified medical literature."
       />
 
 

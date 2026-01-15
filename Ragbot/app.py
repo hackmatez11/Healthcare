@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from src.helper import download_gemini_embeddings, load_vectorstore
@@ -18,12 +18,12 @@ CORS(app)
 embeddings = download_gemini_embeddings()
 vectorstore = load_vectorstore(embeddings, index_name="medical-chatbot")
 
-# Initialize Gemini LLM
-llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash",
-    google_api_key=os.environ.get("GOOGLE_API_KEY"),
+# Initialize Groq LLM (Fast, Stable, Generous Free Tier!)
+llm = ChatGroq(
+    model="llama-3.1-8b-instant",
+    groq_api_key=os.environ.get("GROQ_API_KEY"),
     temperature=0.3,
-    convert_system_message_to_human=True
+    max_tokens=512
 )
 
 # Create prompt template
@@ -83,6 +83,16 @@ def chat():
         error_details = traceback.format_exc()
         print(f"Error processing request: {str(e)}")
         print(f"Full traceback:\n{error_details}")
+        
+        # Check if it's a quota error
+        error_message = str(e)
+        if "429" in error_message or "quota" in error_message.lower():
+            return jsonify({
+                "error": "API quota exceeded. You've reached the daily limit for the Gemini embedding API. Please wait 24 hours or upgrade your API plan.",
+                "success": False,
+                "error_type": "quota_exceeded"
+            }), 429
+        
         return jsonify({
             "error": f"An error occurred: {str(e)}",
             "success": False

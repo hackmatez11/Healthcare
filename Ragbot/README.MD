@@ -1,5 +1,7 @@
 
-# MediBot for diagnosis assistance
+# Medical RAG Chatbot
+
+A Retrieval-Augmented Generation (RAG) chatbot for medical diagnosis assistance using **Groq** (blazing-fast LLM API with generous free tier!).
 
 # How to run?
 ### STEPS:
@@ -31,13 +33,23 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+### STEP 03- Get Your Free Groq API Key
 
-### Create a `.env` file in the root directory and add your Pinecone & openai credentials as follows:
+1. Visit: **https://console.groq.com/keys**
+2. Sign up (free, no credit card required)
+3. Click "Create API Key"
+4. Copy the key (starts with `gsk_...`)
+
+### STEP 04- Create a `.env` file in the root directory and add your API keys:
 
 ```ini
-PINECONE_API_KEY = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-OPENAI_API_KEY = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+GROQ_API_KEY = "gsk_your_groq_api_key_here"
+PINECONE_API_KEY = "your_pinecone_api_key_here"
 ```
+
+**Get your API keys:**
+- Groq API Key: https://console.groq.com/keys (Free!)
+- Pinecone API Key: https://app.pinecone.io/
 
 
 ```bash
@@ -52,7 +64,7 @@ python app.py
 
 Now,
 ```bash
-open up localhost:
+open up localhost:5000
 ```
 
 
@@ -61,8 +73,15 @@ open up localhost:
 - Python
 - LangChain
 - Flask
-- GPT
+- **Groq (Mixtral-8x7b)** - Lightning-fast LLM API!
 - Pinecone
+
+### Why Groq?
+
+✅ **10x Faster** than other LLM APIs  
+✅ **14,400 requests/day** on free tier  
+✅ **No credit card** required  
+✅ **Stable & Reliable**  
 
 
 

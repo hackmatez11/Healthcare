@@ -1,17 +1,12 @@
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
-import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-
-# Configure Gemini API
-genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
 
 def load_pdf(data_path):
     """
@@ -46,18 +41,18 @@ def text_split(extracted_data):
 
 def download_gemini_embeddings():
     """
-    Initialize and return Gemini embeddings model
+    Initialize and return HuggingFace embeddings model
+    (Using sentence-transformers for embeddings)
     
     Returns:
-        GoogleGenerativeAIEmbeddings object
+        HuggingFaceEmbeddings object
     """
-    api_key = os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        raise ValueError("GOOGLE_API_KEY not found in environment variables")
+    from langchain_community.embeddings import HuggingFaceEmbeddings
     
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001",
-        google_api_key=api_key
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={'device': 'cpu'},
+        encode_kwargs={'normalize_embeddings': True}
     )
     return embeddings
 
@@ -76,7 +71,7 @@ def create_pinecone_index(index_name="medical-chatbot"):
     if index_name not in existing_indexes:
         pc.create_index(
             name=index_name,
-            dimension=768,  # Gemini embedding dimension
+            dimension=384,  # HuggingFace all-MiniLM-L6-v2 embedding dimension
             metric="cosine",
             spec=ServerlessSpec(
                 cloud="aws",

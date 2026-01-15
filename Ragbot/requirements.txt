@@ -6,7 +6,7 @@ sentence-transformers==4.1.0
 pypdf==5.6.1
 python-dotenv==1.1.0
 langchain-pinecone==0.2.8
-langchain-google-genai==2.0.8
-google-generativeai==0.8.3
-pinecone[asyncio]==8.0.0
+langchain-groq
+pinecone[asyncio]
+huggingface-hub>=0.23.0
 -e .
