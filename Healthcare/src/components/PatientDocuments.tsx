@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Upload, FileText, Image, X, Download, Eye, Trash2 } from "lucide-react"
+import { Upload, FileText, Image, X, Download, Eye, Trash2, Clock } from "lucide-react"
 import { motion } from "framer-motion"
 
 interface Document {
@@ -18,12 +18,18 @@ interface Document {
   description?: string
 }
 
-export default function PatientDocuments() {
+interface PatientDocumentsProps {
+  selectedCategory: string
+  onDocumentsChange?: (documents: Document[]) => void
+}
+
+export default function PatientDocuments({ selectedCategory, onDocumentsChange }: PatientDocumentsProps) {
   const { user } = useAuth()
   const [documents, setDocuments] = useState<Document[]>([])
   const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [uploadCategory, setUploadCategory] = useState("other")
+  const [description, setDescription] = useState("")
 
   const categories = [
     { id: "all", label: "All Documents" },
@@ -40,6 +46,12 @@ export default function PatientDocuments() {
       fetchDocuments()
     }
   }, [user])
+
+  useEffect(() => {
+    if (onDocumentsChange) {
+      onDocumentsChange(documents)
+    }
+  }, [documents, onDocumentsChange])
 
   const fetchDocuments = async () => {
     if (!user) return
@@ -64,7 +76,7 @@ export default function PatientDocuments() {
     const file = e.target.files[0]
     const fileExt = file.name.split(".").pop()
     const fileName = `${user.id}/${Date.now()}.${fileExt}`
-    
+
     setUploading(true)
 
     try {
@@ -80,12 +92,6 @@ export default function PatientDocuments() {
         .from("patient-files")
         .getPublicUrl(fileName)
 
-      // Determine category based on file type
-      const fileType = file.type
-      let category = "other"
-      if (fileType.startsWith("image/")) category = "photo"
-      else if (fileType === "application/pdf") category = "report"
-
       // Save document metadata to database
       const { error: dbError } = await supabase
         .from("patient_documents")
@@ -95,12 +101,15 @@ export default function PatientDocuments() {
           file_type: file.type,
           file_url: urlData.publicUrl,
           file_size: file.size,
-          category: category
+          category: uploadCategory,
+          description: description
         })
 
       if (dbError) throw dbError
 
       await fetchDocuments()
+      setDescription("")
+      setUploadCategory("other")
       alert("File uploaded successfully!")
     } catch (error) {
       console.error("Error uploading file:", error)
@@ -146,8 +155,8 @@ export default function PatientDocuments() {
     return <FileText className="w-5 h-5" />
   }
 
-  const filteredDocuments = selectedCategory === "all" 
-    ? documents 
+  const filteredDocuments = selectedCategory === "all"
+    ? documents
     : documents.filter(doc => doc.category === selectedCategory)
 
   if (loading) {
@@ -155,14 +164,41 @@ export default function PatientDocuments() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Upload Section */}
-      <div className="bg-card rounded-2xl shadow-card border border-border p-6">
-        <h3 className="font-display font-semibold text-foreground mb-4 text-lg">
-          Upload Medical Documents
-        </h3>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <label className="flex-1">
+    <div className="bg-card rounded-2xl shadow-card border border-border p-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="border border-border rounded-xl p-4 bg-muted/30">
+          <h4 className="font-medium text-foreground mb-3">Upload New Document</h4>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
+                Document Type *
+              </label>
+              <select
+                value={uploadCategory}
+                onChange={(e) => setUploadCategory(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="photo">Photo</option>
+                <option value="report">Lab Report</option>
+                <option value="prescription">Prescription</option>
+                <option value="xray">X-Ray</option>
+                <option value="mri">MRI/CT Scan</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
+                Description (Optional)
+              </label>
+              <Input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Add a brief description"
+              />
+            </div>
+          </div>
+          <div className="mt-4">
             <input
               type="file"
               onChange={uploadFile}
@@ -181,123 +217,105 @@ export default function PatientDocuments() {
                 {uploading ? "Uploading..." : "Choose File to Upload"}
               </label>
             </Button>
-          </label>
-        </div>
-        <p className="text-sm text-muted-foreground mt-2">
-          Supported formats: Images (JPG, PNG), PDF, Word documents. Max size: 10MB
-        </p>
-      </div>
-
-      {/* Category Filter */}
-      <div className="bg-card rounded-2xl shadow-card border border-border p-6">
-        <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                selectedCategory === cat.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-foreground hover:bg-muted/80"
-              }`}
-            >
-              {cat.label}
-              {cat.id === "all" && ` (${documents.length})`}
-            </button>
-          ))}
+            <p className="text-xs text-muted-foreground mt-2">
+              Supported formats: Images (JPG, PNG), PDF, Word documents. Max size: 10MB
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Documents Grid */}
-      <div className="bg-card rounded-2xl shadow-card border border-border p-6">
-        <h3 className="font-display font-semibold text-foreground mb-4 text-lg">
-          Your Documents ({filteredDocuments.length})
-        </h3>
-
+      {/* Documents Table */}
+      <div className="overflow-x-auto">
         {filteredDocuments.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No documents found. Upload your first document above.</p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDocuments.map((doc, index) => (
-              <motion.div
-                key={doc.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="border border-border rounded-xl p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      {getFileIcon(doc.file_type)}
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Name</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Type</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Date</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Size</th>
+                <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredDocuments.map((doc, index) => (
+                <motion.tr
+                  key={doc.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="border-b border-border/50 hover:bg-muted/50 transition-colors"
+                >
+                  <td className="py-4 px-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        {getFileIcon(doc.file_type)}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-foreground">{doc.file_name}</span>
+                        <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full w-fit mt-1">
+                          {categories.find(c => c.id === doc.category)?.label || doc.category}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground truncate">
-                        {doc.file_name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatFileSize(doc.file_size)}
-                      </p>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className="text-sm text-muted-foreground">
+                      {doc.file_type.startsWith("image/") ? "Image" : doc.file_type === "application/pdf" ? "PDF" : "Document"}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="w-4 h-4" />
+                      {new Date(doc.uploaded_at).toLocaleDateString()}
                     </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
-                    {categories.find(c => c.id === doc.category)?.label || doc.category}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(doc.uploaded_at).toLocaleDateString()}
-                  </span>
-                </div>
-
-                {doc.file_type.startsWith("image/") && (
-                  <img
-                    src={doc.file_url}
-                    alt={doc.file_name}
-                    className="w-full h-32 object-cover rounded-lg mb-3"
-                  />
-                )}
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => window.open(doc.file_url, "_blank")}
-                  >
-                    <Eye className="w-4 h-4 mr-1" />
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => {
-                      const a = document.createElement("a")
-                      a.href = doc.file_url
-                      a.download = doc.file_name
-                      a.click()
-                    }}
-                  >
-                    <Download className="w-4 h-4 mr-1" />
-                    Download
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => deleteDocument(doc)}
-                    className="text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className="text-sm text-muted-foreground">{formatFileSize(doc.file_size)}</span>
+                  </td>
+                  <td className="py-4 px-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(doc.file_url, "_blank")}
+                        title="View"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const a = document.createElement("a")
+                          a.href = doc.file_url
+                          a.download = doc.file_name
+                          a.click()
+                        }}
+                        title="Download"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteDocument(doc)}
+                        className="text-destructive hover:bg-destructive/10"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>

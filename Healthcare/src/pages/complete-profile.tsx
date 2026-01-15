@@ -9,8 +9,7 @@ import { PageHeader } from "@/components/ui/PageHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { User, Download, Save, Shield, Lock, QrCode, FileText } from "lucide-react"
-import PatientDocuments from "@/components/PatientDocuments"
+import { User, Download, Save, Shield, Lock, QrCode } from "lucide-react"
 
 export default function CompleteProfile() {
   const { user } = useAuth()
@@ -129,9 +128,9 @@ export default function CompleteProfile() {
     )
   }
 
- const qrUrl = user ? `https://hackmatez11.github.io/QR//index.html?id=${user.id}` : ""
+  const qrUrl = user ? `https://hackmatez11.github.io/QR//index.html?id=${user.id}` : ""
 
-  
+
   return (
     <Layout>
       <PageHeader
@@ -148,194 +147,179 @@ export default function CompleteProfile() {
           animate={{ opacity: 1, y: 0 }}
           className="lg:col-span-3"
         >
-          <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="profile" className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Medical Profile
-              </TabsTrigger>
-              <TabsTrigger value="documents" className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Documents
-              </TabsTrigger>
-            </TabsList>
+          <div className="space-y-6">
 
-            <TabsContent value="profile" className="space-y-6">
-              {/* Basic Information */}
-              <div className="bg-card rounded-2xl shadow-card border border-border p-6">
-                <h3 className="font-display font-semibold text-foreground mb-4 text-lg">Basic Information</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Date of Birth</label>
-                    <Input
-                      name="dob"
-                      type="date"
-                      value={form.dob}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Gender</label>
-                    <select
-                      name="gender"
-                      value={form.gender}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      <option value="">Select Gender</option>
-                      <option>Male</option>
-                      <option>Female</option>
-                      <option>Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Blood Group</label>
-                    <select
-                      name="blood_group"
-                      value={form.blood_group}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      <option value="">Select Blood Group</option>
-                      <option>A+</option>
-                      <option>A-</option>
-                      <option>B+</option>
-                      <option>B-</option>
-                      <option>O+</option>
-                      <option>O-</option>
-                      <option>AB+</option>
-                      <option>AB-</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Phone</label>
-                    <Input
-                      name="phone"
-                      placeholder="Enter phone number"
-                      value={form.phone}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Emergency Contact</label>
-                    <Input
-                      name="emergency_contact"
-                      placeholder="Enter emergency contact"
-                      value={form.emergency_contact}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Height (cm)</label>
-                    <Input
-                      name="height"
-                      type="number"
-                      placeholder="Enter height"
-                      value={form.height}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Weight (kg)</label>
-                    <Input
-                      name="weight"
-                      type="number"
-                      placeholder="Enter weight"
-                      value={form.weight}
-                      onChange={handleChange}
-                    />
-                  </div>
+
+            {/* Basic Information */}
+            <div className="bg-card rounded-2xl shadow-card border border-border p-6">
+              <h3 className="font-display font-semibold text-foreground mb-4 text-lg">Basic Information</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Date of Birth</label>
+                  <Input
+                    name="dob"
+                    type="date"
+                    value={form.dob}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Gender</label>
+                  <select
+                    name="gender"
+                    value={form.gender}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">Select Gender</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Blood Group</label>
+                  <select
+                    name="blood_group"
+                    value={form.blood_group}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">Select Blood Group</option>
+                    <option>A+</option>
+                    <option>A-</option>
+                    <option>B+</option>
+                    <option>B-</option>
+                    <option>O+</option>
+                    <option>O-</option>
+                    <option>AB+</option>
+                    <option>AB-</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Phone</label>
+                  <Input
+                    name="phone"
+                    placeholder="Enter phone number"
+                    value={form.phone}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Emergency Contact</label>
+                  <Input
+                    name="emergency_contact"
+                    placeholder="Enter emergency contact"
+                    value={form.emergency_contact}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Height (cm)</label>
+                  <Input
+                    name="height"
+                    type="number"
+                    placeholder="Enter height"
+                    value={form.height}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Weight (kg)</label>
+                  <Input
+                    name="weight"
+                    type="number"
+                    placeholder="Enter weight"
+                    value={form.weight}
+                    onChange={handleChange}
+                  />
                 </div>
               </div>
+            </div>
 
-              {/* Medical History */}
-              <div className="bg-card rounded-2xl shadow-card border border-border p-6">
-                <h3 className="font-display font-semibold text-foreground mb-4 text-lg">Medical History</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Known Diseases</label>
-                    <textarea
-                      name="diseases"
-                      placeholder="List any chronic conditions or diseases"
-                      value={form.diseases}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Allergies</label>
-                    <textarea
-                      name="allergies"
-                      placeholder="List any allergies (medications, food, etc.)"
-                      value={form.allergies}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Current Medications</label>
-                    <textarea
-                      name="medications"
-                      placeholder="List all medications you're currently taking"
-                      value={form.medications}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Past Surgeries</label>
-                    <textarea
-                      name="surgeries"
-                      placeholder="List any previous surgeries or procedures"
-                      value={form.surgeries}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Lifestyle</label>
-                    <textarea
-                      name="lifestyle"
-                      placeholder="Smoking, alcohol consumption, exercise habits, etc."
-                      value={form.lifestyle}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">Additional Notes</label>
-                    <textarea
-                      name="notes"
-                      placeholder="Any other relevant medical information"
-                      value={form.notes}
-                      onChange={handleChange}
-                      rows={3}
-                      className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                    />
-                  </div>
+            {/* Medical History */}
+            <div className="bg-card rounded-2xl shadow-card border border-border p-6">
+              <h3 className="font-display font-semibold text-foreground mb-4 text-lg">Medical History</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Known Diseases</label>
+                  <textarea
+                    name="diseases"
+                    placeholder="List any chronic conditions or diseases"
+                    value={form.diseases}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Allergies</label>
+                  <textarea
+                    name="allergies"
+                    placeholder="List any allergies (medications, food, etc.)"
+                    value={form.allergies}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Current Medications</label>
+                  <textarea
+                    name="medications"
+                    placeholder="List all medications you're currently taking"
+                    value={form.medications}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Past Surgeries</label>
+                  <textarea
+                    name="surgeries"
+                    placeholder="List any previous surgeries or procedures"
+                    value={form.surgeries}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Lifestyle</label>
+                  <textarea
+                    name="lifestyle"
+                    placeholder="Smoking, alcohol consumption, exercise habits, etc."
+                    value={form.lifestyle}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Additional Notes</label>
+                  <textarea
+                    name="notes"
+                    placeholder="Any other relevant medical information"
+                    value={form.notes}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  />
                 </div>
               </div>
+            </div>
 
-              {/* Save Button */}
-              <Button
-                onClick={submit}
-                disabled={saving}
-                className="w-full gradient-primary text-primary-foreground"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {saving ? "Saving..." : "Save Medical Profile"}
-              </Button>
-            </TabsContent>
-
-            <TabsContent value="documents">
-              <PatientDocuments />
-            </TabsContent>
-          </Tabs>
+            {/* Save Button */}
+            <Button
+              onClick={submit}
+              disabled={saving}
+              className="w-full gradient-primary text-primary-foreground"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? "Saving..." : "Save Medical Profile"}
+            </Button>
+          </div>
         </motion.div>
 
         {/* Sidebar */}
@@ -395,10 +379,10 @@ export default function CompleteProfile() {
           <div className="bg-card rounded-2xl shadow-card border border-border p-5">
             <h4 className="font-semibold text-foreground mb-3">Profile Completion</h4>
             <div className="relative h-2 bg-muted rounded-full overflow-hidden mb-2">
-              <div 
+              <div
                 className="absolute left-0 top-0 h-full gradient-primary rounded-full transition-all"
-                style={{ 
-                  width: `${Object.values(form).filter(v => v !== "").length / Object.keys(form).length * 100}%` 
+                style={{
+                  width: `${Object.values(form).filter(v => v !== "").length / Object.keys(form).length * 100}%`
                 }}
               />
             </div>
