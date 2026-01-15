@@ -1,22 +1,20 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ScanLine, Upload, Image, Check, AlertTriangle, Info } from "lucide-react";
+import { ScanLine, Upload, Image, Check, AlertTriangle, Info, Loader2 } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { medicalAnalysisService, type AnalysisResponse } from "@/services/medicalAnalysisService";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SkinDetection() {
   const [dragActive, setDragActive] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<null | {
-    condition: string;
-    confidence: number;
-    severity: "low" | "medium" | "high";
-    recommendations: string[];
-  }>(null);
+  const [result, setResult] = useState<AnalysisResponse | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { toast } = useToast();
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -32,36 +30,78 @@ export default function SkinDetection() {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    // Handle file upload
-    simulateAnalysis();
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      validateAndAnalyze(file);
+    }
   };
 
-  const simulateAnalysis = () => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      validateAndAnalyze(file);
+    }
+  };
+
+  const validateAndAnalyze = (file: File) => {
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select a file smaller than 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select a JPEG or PNG image",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+    analyzeImage(file);
+  };
+
+  const analyzeImage = async (file: File) => {
     setAnalyzing(true);
-    setProgress(0);
     setResult(null);
 
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setAnalyzing(false);
-          setResult({
-            condition: "Eczema (Atopic Dermatitis)",
-            confidence: 87,
-            severity: "medium",
-            recommendations: [
-              "Keep the affected area moisturized",
-              "Avoid scratching to prevent infection",
-              "Use mild, fragrance-free soaps",
-              "Consult a dermatologist for prescription treatment",
-            ],
-          });
-          return 100;
-        }
-        return prev + 10;
+    try {
+      const analysisResult = await medicalAnalysisService.analyzeSkin(file);
+      setResult(analysisResult);
+      toast({
+        title: "Analysis Complete",
+        description: "Your skin condition has been analyzed successfully",
       });
-    }, 200);
+    } catch (error: any) {
+      console.error('Analysis error:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "Failed to analyze the image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  // Extract severity from analysis text (simple heuristic)
+  const getSeverity = (analysis: string): "low" | "medium" | "high" => {
+    const lowerAnalysis = analysis.toLowerCase();
+    if (lowerAnalysis.includes("severe") || lowerAnalysis.includes("urgent") || lowerAnalysis.includes("immediate")) {
+      return "high";
+    } else if (lowerAnalysis.includes("moderate") || lowerAnalysis.includes("concerning")) {
+      return "medium";
+    }
+    return "low";
   };
 
   return (
@@ -95,7 +135,7 @@ export default function SkinDetection() {
             {analyzing ? (
               <div className="text-center w-full max-w-sm">
                 <div className="w-16 h-16 mx-auto rounded-2xl bg-secondary/10 flex items-center justify-center mb-4">
-                  <ScanLine className="w-8 h-8 text-secondary animate-pulse" />
+                  <Loader2 className="w-8 h-8 text-secondary animate-spin" />
                 </div>
                 <h3 className="font-display font-semibold text-lg text-foreground mb-2">
                   Analyzing Image...
@@ -103,8 +143,6 @@ export default function SkinDetection() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Our AI is examining the skin condition
                 </p>
-                <Progress value={progress} className="h-2" />
-                <p className="text-sm text-muted-foreground mt-2">{progress}%</p>
               </div>
             ) : (
               <>
@@ -117,7 +155,17 @@ export default function SkinDetection() {
                 <p className="text-muted-foreground text-center mb-6 max-w-sm">
                   Drag and drop an image or click to browse. Supported formats: JPG, PNG
                 </p>
-                <Button onClick={simulateAnalysis} className="gradient-primary text-primary-foreground">
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="skin-file-input"
+                />
+                <Button
+                  onClick={() => document.getElementById('skin-file-input')?.click()}
+                  className="gradient-primary text-primary-foreground"
+                >
                   <Image className="w-4 h-4 mr-2" />
                   Select Image
                 </Button>
@@ -138,55 +186,52 @@ export default function SkinDetection() {
                 <div
                   className={cn(
                     "w-12 h-12 rounded-xl flex items-center justify-center",
-                    result.severity === "low"
+                    getSeverity(result.analysis) === "low"
                       ? "bg-success/10"
-                      : result.severity === "medium"
-                      ? "bg-warning/10"
-                      : "bg-destructive/10"
+                      : getSeverity(result.analysis) === "medium"
+                        ? "bg-warning/10"
+                        : "bg-destructive/10"
                   )}
                 >
-                  {result.severity === "low" ? (
+                  {getSeverity(result.analysis) === "low" ? (
                     <Check className="w-6 h-6 text-success" />
                   ) : (
                     <AlertTriangle
                       className={cn(
                         "w-6 h-6",
-                        result.severity === "medium" ? "text-warning" : "text-destructive"
+                        getSeverity(result.analysis) === "medium" ? "text-warning" : "text-destructive"
                       )}
                     />
                   )}
                 </div>
                 <div>
                   <h3 className="font-display font-semibold text-lg text-foreground">
-                    {result.condition}
+                    Skin Analysis Complete
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {result.confidence}% confidence · {result.severity} severity
+                    {getSeverity(result.analysis)} severity
                   </p>
                 </div>
               </div>
 
               <div className="mb-6">
-                <h4 className="font-semibold text-foreground mb-3">Confidence Level</h4>
-                <div className="flex items-center gap-3">
-                  <Progress value={result.confidence} className="flex-1 h-3" />
-                  <span className="text-sm font-medium text-foreground">{result.confidence}%</span>
+                <div className="bg-muted rounded-xl p-3 mb-3">
+                  <p className="text-xs text-muted-foreground">
+                    Model: {result.model} • {new Date(result.timestamp).toLocaleString()}
+                  </p>
                 </div>
               </div>
 
-              <div>
-                <h4 className="font-semibold text-foreground mb-3">Recommendations</h4>
-                <ul className="space-y-2">
-                  {result.recommendations.map((rec, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
-                      {rec}
-                    </li>
-                  ))}
-                </ul>
+              <div className="mb-6">
+                <h4 className="font-semibold text-foreground mb-3">Detailed Analysis</h4>
+                <div className="bg-background rounded-xl p-4 border border-border">
+                  <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {result.analysis}
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-6 p-4 bg-primary/5 rounded-xl border border-primary/20">
+              <div className="p-4 bg-primary/5 rounded-xl border border-primary/20">
                 <div className="flex items-start gap-2">
                   <Info className="w-5 h-5 text-primary mt-0.5" />
                   <p className="text-sm text-muted-foreground">
