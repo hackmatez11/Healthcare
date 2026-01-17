@@ -170,6 +170,11 @@ function renderPatient(data, documents, mentalHealthScores, lifestyleData) {
               </div>
             </div>
 
+            <!-- AI Health Predictions Section -->
+            <div id="predictions-section">
+              ${renderPredictionsLoading()}
+            </div>
+
             <!-- Mental Health Analytics -->
         ${renderMentalHealthAnalytics(mentalHealthScores)}
 
@@ -220,9 +225,44 @@ async function loadPatientData() {
     console.log('All data loaded:', { patientData, documents, mentalHealthScores, lifestyleData });
 
     renderPatient(patientData, documents, mentalHealthScores, lifestyleData);
+
+    // Generate AI predictions asynchronously
+    generateAndDisplayPredictions(patientData, lifestyleData, mentalHealthScores, documents);
   } catch (err) {
     console.error('Error:', err);
     showError('Failed to load patient data. Please check your configuration.');
+  }
+}
+
+// Generate and display AI predictions
+async function generateAndDisplayPredictions(patientData, lifestyleData, mentalHealthScores, documents) {
+  try {
+    console.log('Generating AI-powered health predictions...');
+
+    // Call AI prediction engine
+    const aiPredictions = await generateAIPredictions(
+      patientData,
+      lifestyleData,
+      mentalHealthScores,
+      documents
+    );
+
+    // Update the predictions section with results
+    const predictionsSection = document.getElementById('predictions-section');
+    if (predictionsSection) {
+      predictionsSection.innerHTML = renderHealthPredictions(
+        aiPredictions.predictions,
+        aiPredictions.testRecommendations,
+        aiPredictions.riskAssessments,
+        aiPredictions.summary
+      );
+    }
+  } catch (error) {
+    console.error('Error generating predictions:', error);
+    const predictionsSection = document.getElementById('predictions-section');
+    if (predictionsSection) {
+      predictionsSection.innerHTML = renderPredictionsError(error.message);
+    }
   }
 }
 

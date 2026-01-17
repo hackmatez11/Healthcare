@@ -1,0 +1,3 @@
+# QR Profile Page - Ignore sensitive files
+config.js
+*.local.js
