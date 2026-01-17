@@ -258,6 +258,14 @@ async function generateAndDisplayPredictions(patientData, lifestyleData, mentalH
       console.log('Sample cached prediction:', cachedPredictions[0]);
     }
 
+    if (cachedTests && cachedTests.length > 0) {
+      console.log('Sample cached test:', cachedTests[0]);
+    }
+
+    if (cachedRisks && cachedRisks.length > 0) {
+      console.log('Sample cached risk:', cachedRisks[0]);
+    }
+
     // Check if we have fresh cached predictions (< 24 hours old)
     if (cachedPredictions && arePredictionsFresh(cachedPredictions)) {
       console.log('Using cached predictions from database');

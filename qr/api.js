@@ -182,6 +182,7 @@ async function fetchCachedPredictions(userId) {
 // Fetch cached test recommendations from database
 async function fetchCachedTestRecommendations(userId) {
     try {
+        console.log('Fetching test recommendations for user:', userId);
         const { data, error } = await supabaseClient
             .from('medical_test_recommendations')
             .select('*')
@@ -191,13 +192,14 @@ async function fetchCachedTestRecommendations(userId) {
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('Error fetching test recommendations:', error);
+            console.error('Supabase error fetching test recommendations:', error);
             return null;
         }
 
+        console.log('Fetched test recommendations:', data?.length || 0, 'records');
         return data || [];
     } catch (error) {
-        console.error('Error fetching test recommendations:', error);
+        console.error('Exception fetching test recommendations:', error);
         return null;
     }
 }
@@ -205,6 +207,7 @@ async function fetchCachedTestRecommendations(userId) {
 // Fetch cached risk assessments from database
 async function fetchCachedRiskAssessments(userId) {
     try {
+        console.log('Fetching risk assessments for user:', userId);
         const { data, error } = await supabaseClient
             .from('health_risk_assessments')
             .select('*')
@@ -213,9 +216,11 @@ async function fetchCachedRiskAssessments(userId) {
             .limit(10);
 
         if (error) {
-            console.error('Error fetching risk assessments:', error);
+            console.error('Supabase error fetching risk assessments:', error);
             return null;
         }
+
+        console.log('Fetched risk assessments:', data?.length || 0, 'records');
 
         // Group by assessment_type and get the most recent for each type
         const latestAssessments = {};
@@ -225,9 +230,11 @@ async function fetchCachedRiskAssessments(userId) {
             }
         });
 
-        return Object.values(latestAssessments);
+        const result = Object.values(latestAssessments);
+        console.log('Grouped risk assessments:', result.length, 'unique types');
+        return result;
     } catch (error) {
-        console.error('Error fetching risk assessments:', error);
+        console.error('Exception fetching risk assessments:', error);
         return null;
     }
 }
