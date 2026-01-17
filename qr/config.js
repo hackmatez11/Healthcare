@@ -5,7 +5,7 @@ const SUPABASE_URL = 'https://edwuptavjdakjuqyrxaf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_cHYdCX_v8CTBV0VlqaaAwQ_GR-17x_Y';
 
 // Gemini AI Configuration
-const GEMINI_API_KEY = 'AIzaSyCZmoIX-T8OzqBm3PJoeXbdpz9MKY5506w';
+const GEMINI_API_KEY = '';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent';
 
 // Initialize Supabase client
