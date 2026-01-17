@@ -150,3 +150,121 @@ async function fetchLifestyleData(patientId) {
         };
     }
 }
+
+// ============================================
+// CACHED PREDICTIONS API
+// ============================================
+
+// Fetch cached health predictions from database
+async function fetchCachedPredictions(userId) {
+    try {
+        console.log('Fetching cached predictions for user:', userId);
+        const { data, error } = await supabaseClient
+            .from('health_predictions')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Supabase error fetching cached predictions:', error);
+            return null;
+        }
+
+        console.log('Fetched predictions:', data?.length || 0, 'records');
+        return data || [];
+    } catch (error) {
+        console.error('Exception fetching cached predictions:', error);
+        return null;
+    }
+}
+
+// Fetch cached test recommendations from database
+async function fetchCachedTestRecommendations(userId) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('medical_test_recommendations')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('is_completed', false)
+            .order('priority_level', { ascending: true })
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching test recommendations:', error);
+            return null;
+        }
+
+        return data || [];
+    } catch (error) {
+        console.error('Error fetching test recommendations:', error);
+        return null;
+    }
+}
+
+// Fetch cached risk assessments from database
+async function fetchCachedRiskAssessments(userId) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('health_risk_assessments')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+        if (error) {
+            console.error('Error fetching risk assessments:', error);
+            return null;
+        }
+
+        // Group by assessment_type and get the most recent for each type
+        const latestAssessments = {};
+        (data || []).forEach(assessment => {
+            if (!latestAssessments[assessment.assessment_type]) {
+                latestAssessments[assessment.assessment_type] = assessment;
+            }
+        });
+
+        return Object.values(latestAssessments);
+    } catch (error) {
+        console.error('Error fetching risk assessments:', error);
+        return null;
+    }
+}
+
+// Get age of prediction in hours
+function getPredictionAge(timestamp) {
+    if (!timestamp) return null;
+    const now = new Date();
+    const predictionTime = new Date(timestamp);
+    const diffMs = now - predictionTime;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    return diffHours;
+}
+
+// Check if cached predictions are fresh (< 24 hours old)
+function arePredictionsFresh(predictions) {
+    if (!predictions || predictions.length === 0) return false;
+
+    const mostRecent = predictions[0];
+    const age = getPredictionAge(mostRecent.created_at);
+
+    return age !== null && age < 24;
+}
+
+// Format prediction age for display
+function formatPredictionAge(timestamp) {
+    const age = getPredictionAge(timestamp);
+    if (age === null) return 'Unknown';
+
+    if (age < 1) {
+        const minutes = Math.round(age * 60);
+        return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    } else if (age < 24) {
+        const hours = Math.floor(age);
+        return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    } else {
+        const days = Math.floor(age / 24);
+        return `${days} day${days !== 1 ? 's' : ''} ago`;
+    }
+}

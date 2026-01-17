@@ -4,7 +4,7 @@
 // ============================================
 
 // Render health predictions section
-function renderHealthPredictions(predictions, testRecommendations, riskAssessments, summary) {
+function renderHealthPredictions(predictions, testRecommendations, riskAssessments, summary, timestamp, isCached = false) {
     if (!predictions || predictions.length === 0) {
         return `
             <div class="glass-card rounded-2xl p-4 fade-in">
@@ -24,12 +24,23 @@ function renderHealthPredictions(predictions, testRecommendations, riskAssessmen
 
     return `
         <div class="glass-card rounded-2xl p-4 fade-in">
-            <h2 class="text-base font-bold text-gray-800 mb-3 flex items-center gap-1.5">
-                <div class="p-1.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
-                    ${icons.shield.replace('w-5 h-5', 'w-4 h-4 text-white')}
+            <h2 class="text-base font-bold text-gray-800 mb-3 flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                    <div class="p-1.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
+                        ${icons.shield.replace('w-5 h-5', 'w-4 h-4 text-white')}
+                    </div>
+                    <span>AI Health Predictions</span>
                 </div>
-                <span>AI Health Predictions</span>
-                
+                ${timestamp ? `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500">
+                            ${isCached ? '📦 Cached' : '✨ Fresh'} · ${formatPredictionAge(timestamp)}
+                        </span>
+                        <button onclick="refreshPredictions()" class="text-xs px-2 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-colors">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                ` : ''}
             </h2>
 
             ${summary ? `

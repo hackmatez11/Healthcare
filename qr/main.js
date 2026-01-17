@@ -234,10 +234,53 @@ async function loadPatientData() {
   }
 }
 
-// Generate and display AI predictions
+// Generate and display AI predictions (with caching)
 async function generateAndDisplayPredictions(patientData, lifestyleData, mentalHealthScores, documents) {
   try {
-    console.log('Generating AI-powered health predictions...');
+    console.log('Loading health predictions...');
+    const patientId = getPatientId();
+
+    // First, try to fetch cached predictions from database
+    const [cachedPredictions, cachedTests, cachedRisks] = await Promise.all([
+      fetchCachedPredictions(patientId),
+      fetchCachedTestRecommendations(patientId),
+      fetchCachedRiskAssessments(patientId)
+    ]);
+
+    console.log('Cached data fetched:', {
+      predictions: cachedPredictions?.length || 0,
+      tests: cachedTests?.length || 0,
+      risks: cachedRisks?.length || 0,
+      queriedUserId: patientId
+    });
+
+    if (cachedPredictions && cachedPredictions.length > 0) {
+      console.log('Sample cached prediction:', cachedPredictions[0]);
+    }
+
+    // Check if we have fresh cached predictions (< 24 hours old)
+    if (cachedPredictions && arePredictionsFresh(cachedPredictions)) {
+      console.log('Using cached predictions from database');
+
+      const predictionsSection = document.getElementById('predictions-section');
+      if (predictionsSection) {
+        const timestamp = cachedPredictions[0]?.created_at;
+        const summary = 'Health analysis based on your latest data';
+
+        predictionsSection.innerHTML = renderHealthPredictions(
+          cachedPredictions,
+          cachedTests || [],
+          cachedRisks || [],
+          summary,
+          timestamp,
+          true // isCached flag
+        );
+      }
+      return;
+    }
+
+    // If no cached predictions or they're stale, generate new ones
+    console.log('Generating new AI-powered health predictions...');
 
     // Call AI prediction engine
     const aiPredictions = await generateAIPredictions(
@@ -254,7 +297,9 @@ async function generateAndDisplayPredictions(patientData, lifestyleData, mentalH
         aiPredictions.predictions,
         aiPredictions.testRecommendations,
         aiPredictions.riskAssessments,
-        aiPredictions.summary
+        aiPredictions.summary,
+        new Date().toISOString(),
+        false // isCached flag
       );
     }
   } catch (error) {
