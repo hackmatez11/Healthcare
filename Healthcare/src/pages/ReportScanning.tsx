@@ -110,9 +110,9 @@ export default function ReportScanning() {
         description="Upload X-rays, MRI scans, or lab reports for AI-powered analysis and interpretation."
       />
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div>
         {/* Upload Section */}
-        <div className="lg:col-span-2">
+        <div>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -190,21 +190,11 @@ export default function ReportScanning() {
                 AI Analysis Results
               </h3>
 
-              <div className="bg-muted rounded-xl p-4 mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle className="w-5 h-5 text-success" />
-                  <span className="font-medium text-foreground">Analysis Complete</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Model: {result.model} • {new Date(result.timestamp).toLocaleString()}
-                </p>
-              </div>
-
               <div className="prose prose-sm max-w-none">
                 <div className="bg-background rounded-xl p-4 border border-border">
                   <h4 className="font-semibold text-foreground mb-3">Detailed Analysis</h4>
                   <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {result.analysis}
+                    {result.analysis.replace(/\*\*/g, '').replace(/###\s*/g, '')}
                   </div>
                 </div>
               </div>
@@ -219,63 +209,6 @@ export default function ReportScanning() {
               </div>
             </motion.div>
           )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-card rounded-2xl shadow-card border border-border p-5"
-          >
-            <h3 className="font-display font-semibold text-foreground mb-4">Recent Scans</h3>
-            <div className="space-y-3">
-              {[
-                { name: "Chest X-Ray", date: "Jan 10, 2026", status: "analyzed" },
-                { name: "MRI Brain", date: "Jan 5, 2026", status: "analyzed" },
-                { name: "Blood Work", date: "Dec 28, 2025", status: "analyzed" },
-              ].map((scan) => (
-                <div
-                  key={scan.name}
-                  className="flex items-center justify-between p-3 bg-muted rounded-xl"
-                >
-                  <div>
-                    <p className="font-medium text-sm text-foreground">{scan.name}</p>
-                    <p className="text-xs text-muted-foreground">{scan.date}</p>
-                  </div>
-                  <span className="text-xs px-2 py-1 bg-success/10 text-success rounded-full">
-                    {scan.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl p-5 border border-primary/20"
-          >
-            <h4 className="font-display font-semibold text-foreground mb-2">
-              How it works
-            </h4>
-            <ol className="text-sm text-muted-foreground space-y-2">
-              <li className="flex gap-2">
-                <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center flex-shrink-0">1</span>
-                Upload your medical image
-              </li>
-              <li className="flex gap-2">
-                <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center flex-shrink-0">2</span>
-                AI analyzes the image
-              </li>
-              <li className="flex gap-2">
-                <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center flex-shrink-0">3</span>
-                Review findings & share with doctor
-              </li>
-            </ol>
-          </motion.div>
         </div>
       </div>
     </Layout>

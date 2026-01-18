@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import {
   MessageSquare,
   ScanLine,
@@ -20,6 +21,12 @@ import {
 import { Layout } from "@/components/layout/Layout";
 import { FeatureCard } from "@/components/dashboard/FeatureCard";
 import { StatsCard } from "@/components/dashboard/StatsCard";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  getDashboardStats,
+  getHealthScoreChange,
+  getConsultationGrowth
+} from "@/services/dashboardStatsService";
 
 const features = [
   {
@@ -113,24 +120,81 @@ const features = [
     path: "/lifestyle",
     gradient: "bg-coral",
   },
-   {
+  {
     icon: Users,
     title: "User Profile",
     description: "Manage your personal and medical information.",
     path: "/complete-profile",
     gradient: "gradient-primary",
-   }
+  }
 
-];
-
-const stats = [
-  { icon: Users, title: "Active Users", value: "12,847", change: "12% this month", positive: true },
-  { icon: MessageSquare, title: "Consultations", value: "3,429", change: "8% this week", positive: true },
-  { icon: TrendingUp, title: "Health Score", value: "87%", change: "5% improvement", positive: true },
-  { icon: Clock, title: "Response Time", value: "< 2s", change: "Faster than ever", positive: true },
 ];
 
 const Index = () => {
+  const { user } = useAuth();
+  const [stats, setStats] = useState([
+    { icon: MessageSquare, title: "Chat Sessions", value: "0", change: "Loading...", positive: true },
+    { icon: Mic, title: "Consultations", value: "0", change: "Loading...", positive: true },
+    { icon: TrendingUp, title: "Health Score", value: "0%", change: "Loading...", positive: true },
+    { icon: Clock, title: "Response Time", value: "<2s", change: "Faster than ever", positive: true },
+  ]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch all stats in parallel
+        const [dashboardData, healthChange, consultationGrowth] = await Promise.all([
+          getDashboardStats(user.id),
+          getHealthScoreChange(user.id),
+          getConsultationGrowth(user.id),
+        ]);
+
+        setStats([
+          {
+            icon: MessageSquare,
+            title: "Chat Sessions",
+            value: dashboardData.totalChatSessions.toString(),
+            change: `${dashboardData.totalChatSessions} total sessions`,
+            positive: true,
+          },
+          {
+            icon: Mic,
+            title: "Consultations",
+            value: dashboardData.totalConsultations.toString(),
+            change: consultationGrowth.change,
+            positive: consultationGrowth.positive,
+          },
+          {
+            icon: TrendingUp,
+            title: "Health Score",
+            value: `${dashboardData.healthScore}%`,
+            change: healthChange.change,
+            positive: healthChange.positive,
+          },
+          {
+            icon: Clock,
+            title: "Response Time",
+            value: dashboardData.avgResponseTime,
+            change: "Faster than ever",
+            positive: true,
+          },
+        ]);
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, [user]);
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -146,7 +210,7 @@ const Index = () => {
               Welcome to MedCare AI
             </h1>
             <p className="text-primary-foreground/90 text-lg max-w-2xl mb-6">
-              Your comprehensive AI-powered healthcare platform. Get instant medical guidance, 
+              Your comprehensive AI-powered healthcare platform. Get instant medical guidance,
               track your health, and connect with specialists—all in one place.
             </p>
             <div className="flex flex-wrap gap-3">

@@ -35,7 +35,7 @@ export default function Chatbot() {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm your AI medical assistant powered by RAG (Retrieval-Augmented Generation) with Groq. I can help answer medical questions based on verified medical literature. How can I assist you today?",
+      content: "Hello! I'm your AI medical assistant . I can help answer medical questions based on verified medical literature. How can I assist you today?",
       timestamp: new Date(),
     },
   ]);

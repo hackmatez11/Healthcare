@@ -215,18 +215,10 @@ export default function SkinDetection() {
               </div>
 
               <div className="mb-6">
-                <div className="bg-muted rounded-xl p-3 mb-3">
-                  <p className="text-xs text-muted-foreground">
-                    Model: {result.model} • {new Date(result.timestamp).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mb-6">
                 <h4 className="font-semibold text-foreground mb-3">Detailed Analysis</h4>
                 <div className="bg-background rounded-xl p-4 border border-border">
                   <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {result.analysis}
+                    {result.analysis.replace(/\*\*/g, '').replace(/###\s*/g, '')}
                   </div>
                 </div>
               </div>

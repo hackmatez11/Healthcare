@@ -14,6 +14,7 @@ import {
   Gamepad2,
   Activity,
   Search,
+  Stethoscope,
   Heart,
   ChevronLeft,
   ChevronRight,
@@ -109,7 +110,7 @@ export function Sidebar() {
         {/* Logo */}
         <div className="p-6 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
-            <Heart className="w-5 h-5 text-primary-foreground" />
+            <Stethoscope className="w-5 h-5 text-primary-foreground" />
           </div>
           <AnimatePresence>
             {!isCollapsed && (
