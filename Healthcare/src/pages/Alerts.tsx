@@ -198,7 +198,7 @@ export default function Alerts() {
             <div className="space-y-4">
               {[
                 { label: "Push Notifications", enabled: true },
-                { label: "SMS Reminders", enabled: true },
+                { label: "WhatsApp Reminders", enabled: true },
                 { label: "Email Alerts", enabled: false },
                 { label: "Emergency Alerts", enabled: true },
               ].map((setting) => (

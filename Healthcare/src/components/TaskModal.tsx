@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Task } from "@/types/task";
 import { useEffect } from "react";
 
@@ -15,6 +16,8 @@ const formSchema = z.object({
     time: z.string().min(1, "Time is required"),
     time_period: z.enum(["AM", "PM"]),
     status: z.enum(["to_complete", "in_progress", "completed"]),
+    phone_number: z.string().optional(),
+    whatsapp_enabled: z.boolean().default(false),
 });
 
 interface TaskModalProps {
@@ -33,6 +36,8 @@ export function TaskModal({ open, onOpenChange, onSubmit, task }: TaskModalProps
             time: "",
             time_period: "AM",
             status: "to_complete",
+            phone_number: "",
+            whatsapp_enabled: false,
         },
     });
 
@@ -44,6 +49,8 @@ export function TaskModal({ open, onOpenChange, onSubmit, task }: TaskModalProps
                 time: task.time,
                 time_period: task.time_period || "AM",
                 status: task.status,
+                phone_number: task.phone_number || "",
+                whatsapp_enabled: task.whatsapp_enabled || false,
             });
         } else {
             form.reset({
@@ -52,6 +59,8 @@ export function TaskModal({ open, onOpenChange, onSubmit, task }: TaskModalProps
                 time: "",
                 time_period: "AM",
                 status: "to_complete",
+                phone_number: "",
+                whatsapp_enabled: false,
             });
         }
     }, [task, form, open]);
@@ -134,6 +143,39 @@ export function TaskModal({ open, onOpenChange, onSubmit, task }: TaskModalProps
                                 )}
                             />
                         </div>
+                        <FormField
+                            control={form.control}
+                            name="phone_number"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>WhatsApp Phone Number (Optional)</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="e.g. +1234567890" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="whatsapp_enabled"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                    <div className="space-y-0.5">
+                                        <FormLabel>WhatsApp Reminders</FormLabel>
+                                        <div className="text-sm text-muted-foreground">
+                                            Send notification 2 minutes before
+                                        </div>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
                         <FormField
                             control={form.control}
                             name="status"
