@@ -1,70 +1,72 @@
-# Email Notification System - FREE with Resend
+# WhatsApp Notification System - Twilio Setup Guide
 
 ## Overview
 
-Send **FREE email alerts** to patients when critical health issues are detected!
+Send **WhatsApp notifications** to patients for critical health alerts using Twilio!
 
-- ✅ **Completely FREE** - 3,000 emails/month
-- ✅ **No credit card required** for free tier
-- ✅ **Beautiful HTML emails** with professional design
-- ✅ **Easy setup** - 5 minutes
-
----
-
-## Step 1: Create Resend Account (FREE)
-
-1. Go to https://resend.com/
-2. Click **Sign Up** (use GitHub or email)
-3. Verify your email
-4. You're done! No credit card needed
+- ✅ **Rich formatting** with emojis and bold text
+- ✅ **Instant delivery** via WhatsApp
+- ✅ **Free Twilio trial** - $15 credit (~200 messages)
+- ✅ **Better engagement** than SMS or email
 
 ---
 
-## Step 2: Get API Key
+## Step 1: Set Up Twilio WhatsApp Sandbox
 
-1. Login to Resend dashboard
-2. Go to **API Keys** section
-3. Click **Create API Key**
-4. Copy the API key
+### Create Twilio Account
+
+1. Go to https://www.twilio.com/try-twilio
+2. Sign up for a free account (get $15 credit)
+3. Verify your phone number
+
+### Activate WhatsApp Sandbox
+
+1. Login to Twilio Console
+2. Go to **Messaging** → **Try it out** → **Send a WhatsApp message**
+3. You'll see a sandbox number like: `+1 415 523 8886`
+4. **Join the sandbox:**
+   - Send a WhatsApp message to the sandbox number
+   - Message format: `join <your-sandbox-code>` (e.g., `join happy-tiger`)
+   - You'll receive a confirmation message
+
+### Get Twilio Credentials
+
+1. Go to Twilio Console Dashboard
+2. Find your:
+   - **Account SID** (starts with AC...)
+   - **Auth Token** (click to reveal)
+   - **WhatsApp Sandbox Number** (e.g., `whatsapp:+14155238886`)
 
 ---
 
-## Step 3: Add API Key to Supabase
+## Step 2: Add Twilio Credentials to Supabase
 
 Go to **Supabase Dashboard → Edge Functions → Secrets** and add:
 
 ```
-RESEND_API_KEY=re_your_api_key_here
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=your_auth_token_here
+TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
 ```
 
 ---
 
-## Step 4: Update Patient Email Addresses
+## Step 3: Update Patient Phone Number
 
-The system uses the `phone` field as email. You need to add email addresses:
+WhatsApp needs a valid phone number **with country code**:
 
 ```sql
--- Add email column to patients table (if not exists)
-ALTER TABLE patients ADD COLUMN IF NOT EXISTS email TEXT;
-
--- Update patient emails
+-- Update patient phone with country code (+91 for India)
 UPDATE patients 
-SET email = 'patient@example.com' 
+SET phone = '+919876543210'  -- Include +91 country code
 WHERE id = '3f31cc72-a6a5-48a3-8e79-e9e29106179a';
 ```
 
-**OR** if you want to use the existing `phone` field for emails:
-
-```sql
--- Just store email in phone field
-UPDATE patients 
-SET phone = 'patient@example.com' 
-WHERE id = '3f31cc72-a6a5-48a3-8e79-e9e29106179a';
-```
+**Important:** Phone number must be in format `+[country_code][number]` (e.g., `+919876543210`)
 
 ---
 
-## Step 5: Deploy Edge Function
+## Step 4: Deploy the Edge Function
 
 ```powershell
 cd d:\Health\Healthcare
@@ -73,20 +75,9 @@ npx supabase functions deploy send-health-alert-sms
 
 ---
 
-## Step 6: Set Up Database Triggers
+## Step 5: Test WhatsApp Notification
 
-Run the SQL migration (same as before):
-
-```sql
--- Run the entire 008_sms_notification_triggers.sql file
--- Make sure to replace YOUR_SERVICE_ROLE_KEY with actual key
-```
-
----
-
-## Step 7: Test the System
-
-### Test Manually
+### Manual Test
 
 ```powershell
 $PROJECT_URL = "https://edwuptavjdakjuqyrxaf.supabase.co"
@@ -99,8 +90,8 @@ $body = @{
     condition_name = "Test Critical Condition"
     risk_level = "critical"
     risk_score = 85
-    description = "This is a test alert"
-    recommendations = @("Consult doctor immediately", "Monitor symptoms")
+    description = "This is a test WhatsApp alert"
+    recommendations = @("Consult doctor immediately", "Monitor symptoms", "Follow treatment plan")
   }
 } | ConvertTo-Json
 
@@ -117,93 +108,157 @@ Invoke-RestMethod -Uri "$PROJECT_URL/functions/v1/send-health-alert-sms" `
 
 ```sql
 INSERT INTO health_predictions (
-  user_id,
-  prediction_type,
-  condition_name,
-  risk_score,
-  risk_level,
-  description,
-  recommendations,
-  is_active
+  user_id, prediction_type, condition_name, risk_score, risk_level,
+  description, recommendations, is_active
 ) VALUES (
   '3f31cc72-a6a5-48a3-8e79-e9e29106179a',
   'condition_risk',
-  'Test Critical Alert',
-  85,
+  'Test WhatsApp Alert',
+  90,
   'critical',
-  'This is a test critical health alert',
-  ARRAY['Seek immediate medical attention'],
+  'Testing WhatsApp notification',
+  ARRAY['Seek immediate medical attention', 'Monitor vital signs'],
   true
 );
 ```
 
-**Expected:** Email should be sent automatically!
+**Expected:** WhatsApp message received on your phone! 📱
 
 ---
 
-## Email Preview
+## WhatsApp Message Preview
 
-### Critical Health Alert Email
+### Critical Health Alert
 
-![Email Preview](https://via.placeholder.com/600x400/667eea/ffffff?text=Beautiful+HTML+Email)
+```
+🚨 *CRITICAL HEALTH ALERT*
 
-- Professional gradient header
-- Color-coded risk levels
-- Clear action items
-- Responsive design
+Dear Hackmatez,
+
+⚠️ *Critical Risk Detected*
+Condition: *Severe Dehydration*
+Risk Level: *CRITICAL*
+Risk Score: 95/100
+
+📋 Zero fluid intake poses immediate risk to renal function
+
+*Recommended Actions:*
+1. Increase water intake immediately to 2-3 liters/day
+2. Monitor urine color and output
+3. Seek medical attention if experiencing dizziness
+
+*Next Steps:*
+1. Review full details in your health dashboard
+2. Consult with your healthcare provider
+3. Follow the recommended actions above
+
+_This is an automated health alert from your Healthcare System._
+```
+
+### Urgent Medical Test
+
+```
+⚕️ *URGENT MEDICAL TEST REQUIRED*
+
+Dear Hackmatez,
+
+*Test Name:* Complete Blood Count (CBC)
+*Priority:* URGENT
+*Category:* diagnostic
+
+*Reason:*
+To check for anemia and infection markers based on recent symptoms
+
+*Frequency:* Once immediately, then follow-up in 3 months
+
+⚠️ *Action Required:*
+Please schedule this test as soon as possible. Contact your healthcare provider to book an appointment.
+
+_This is an automated health alert from your Healthcare System._
+```
 
 ---
 
 ## Troubleshooting
 
-### Email Not Sending
+### WhatsApp Not Sending
 
-**Check API Key:**
-- Verify `RESEND_API_KEY` is set in Supabase secrets
-- Make sure it starts with `re_`
+**1. Check if you joined the sandbox:**
+- Send `join <code>` to Twilio's WhatsApp number
+- You should receive a confirmation
 
-**Check Email Address:**
+**2. Verify credentials:**
+- Check Supabase secrets are set correctly
+- Account SID starts with `AC`
+- WhatsApp number format: `whatsapp:+14155238886`
+
+**3. Check phone number format:**
 ```sql
-SELECT phone FROM patients WHERE id = '3f31cc72-a6a5-48a3-8e79-e9e29106179a';
+SELECT phone FROM patients WHERE id = 'your-user-id';
 ```
-- Must be a valid email address
-- Update if needed
+- Should be 10 digits for India (e.g., `9876543210`)
+- Function adds `+91` automatically
 
-**Check Resend Dashboard:**
-- Login to Resend
-- Go to **Emails** section
-- Check delivery status
+**4. Check Twilio logs:**
+- Go to Twilio Console → Monitor → Logs → Messaging
+- Look for delivery status and errors
 
-### Resend Free Tier Limits
+### Common Errors
 
-- **3,000 emails/month** - FREE
-- **100 emails/day** - FREE
-- No credit card required
+**"To number is not a valid WhatsApp number"**
+- Make sure the recipient joined the sandbox
+- Verify phone number format
 
-If you need more:
-- Paid plan: $20/month for 50,000 emails
+**"Authentication failed"**
+- Check Account SID and Auth Token are correct
+- Make sure there are no extra spaces
+
+**"Insufficient balance"**
+- Free trial has $15 credit
+- Add more credits if needed
+
+---
+
+## Production Setup (After Testing)
+
+For production use, you need to:
+
+1. **Get WhatsApp Business Account**
+   - Apply through Twilio
+   - Get approved by Meta/WhatsApp
+   - Use your own WhatsApp number
+
+2. **Message Templates**
+   - Create pre-approved message templates
+   - Required for production WhatsApp messaging
+
+3. **Pricing**
+   - Conversation-based pricing
+   - ~$0.005-0.01 per conversation
+   - Much cheaper than SMS!
 
 ---
 
 ## Cost Comparison
 
-| Service | Free Tier | Cost per SMS/Email |
-|---------|-----------|-------------------|
-| Fast2SMS | 50 SMS (web only) | ₹0.15-0.25 |
-| Twilio | $15 credit | $0.0079 (~₹0.50) |
-| **Resend** | **3,000 emails** | **FREE** ✅ |
+| Service | Free Tier | Cost per Message |
+|---------|-----------|------------------|
+| SMS (Twilio) | $15 credit | $0.0079 (~₹0.65) |
+| **WhatsApp** | **$15 credit** | **$0.005 (~₹0.40)** ✅ |
+| Email (Resend) | 3,000/month | FREE |
 
-**Winner: Resend!** 🎉
+**WhatsApp is 40% cheaper than SMS!** 🎉
 
 ---
 
 ## Next Steps
 
-1. ✅ Create Resend account
-2. ✅ Get API key
-3. ✅ Add to Supabase secrets
-4. ✅ Update patient emails
-5. ✅ Deploy function
-6. ✅ Test!
+1. ✅ Create Twilio account
+2. ✅ Join WhatsApp sandbox
+3. ✅ Add credentials to Supabase
+4. ✅ Deploy function
+5. ✅ Test with your phone
+6. ⏳ Set up database triggers
+7. ⏳ Monitor for 24 hours
 
-The email notification system is ready! 📧
+The WhatsApp notification system is ready! �
