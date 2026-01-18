@@ -1,6 +1,7 @@
 import Groq from 'groq-sdk';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import InferenceHTTPClient from 'inference-sdk';
 
 // Load environment variables
 dotenv.config();
@@ -16,6 +17,14 @@ function imageToBase64(filePath) {
   return imageBuffer.toString('base64');
 }
 
+
+
+CLIENT = InferenceHTTPClient(
+  api_url = "https://serverless.roboflow.com",
+  api_key = "OnGIwp43w9s3C9lPMInc"
+)
+
+re = CLIENT.infer(your_image.jpg, model_id = "skin-disease-x965d/1")
 // Specialized prompts for each medical imaging type
 const prompts = {
   xray: `You are an expert radiologist analyzing an X-ray image. Provide a detailed medical analysis including:
