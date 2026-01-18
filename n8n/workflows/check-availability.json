@@ -1,0 +1,149 @@
+{
+  "name": "Check Doctor Availability",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "check-availability",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract and validate request data\nconst body = $input.item.json.body || $input.item.json;\nconst { doctor_id, date, time } = body;\n\n// Validate required fields\nif (!doctor_id || !date || !time) {\n  return {\n    json: {\n      error: 'Missing required fields: doctor_id, date, time',\n      available: false\n    }\n  };\n}\n\n// Return formatted data\nreturn {\n  json: {\n    doctor_id,\n    date,\n    time\n  }\n};"
+      },
+      "id": "parse-request",
+      "name": "Parse Request",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://edwuptavjdakjuqyrxaf.supabase.co/rest/v1/rpc/check_doctor_availability",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_publishable_cHYdCX_v8CTBV0VlqaaAwQ_GR-17x_Y"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_cHYdCX_v8CTBV0VlqaaAwQ_GR-17x_Y"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_doctor_id: $json.doctor_id, p_date: $json.date, p_time: $json.time }) }}",
+        "options": {}
+      },
+      "id": "query-supabase",
+      "name": "Query Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Format response for voice AI\nconst data = $input.item.json;\nconst isAvailable = data.available || false;\n\nreturn {\n  json: {\n    available: isAvailable,\n    doctor_id: data.doctor_id,\n    date: data.date,\n    time: data.time,\n    message: isAvailable \n      ? 'This slot is available for booking!' \n      : 'Sorry, this time slot is already booked. Please try another time.'\n  }\n};"
+      },
+      "id": "format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}"
+      },
+      "id": "respond-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Request": {
+      "main": [
+        [
+          {
+            "node": "Query Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1",
+  "id": "check-availability",
+  "meta": {
+    "instanceId": "your-instance-id"
+  },
+  "tags": []
+}

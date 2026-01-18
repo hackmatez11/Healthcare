@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Clock, User, MapPin, Star, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Star, Filter, ChevronLeft, ChevronRight, Phone } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { VoiceBookingWidget } from "@/components/VoiceBookingWidget";
 import { cn } from "@/lib/utils";
 
 const doctors = [
@@ -43,17 +44,38 @@ export default function Appointments() {
   const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState<number | null>(15);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [isVoiceBookingOpen, setIsVoiceBookingOpen] = useState(false);
 
   const currentMonth = "January 2026";
 
+  const handleVoiceBookingComplete = (details: any) => {
+    console.log('Voice booking completed:', details);
+    // Optionally update the UI with the booking details
+    setIsVoiceBookingOpen(false);
+  };
+
   return (
     <Layout>
-      <PageHeader
-        icon={Calendar}
-        title="Appointment Booking"
-        description="Schedule appointments with our healthcare professionals based on real-time availability."
-        gradient="bg-coral"
-      />
+      <div className="relative">
+        <PageHeader
+          icon={Calendar}
+          title="Appointment Booking"
+          description="Schedule appointments with our healthcare professionals based on real-time availability."
+          gradient="bg-coral"
+        />
+
+        {/* Voice Booking Button */}
+        <div className="absolute top-6 right-6">
+          <Button
+            onClick={() => setIsVoiceBookingOpen(true)}
+            className="gradient-primary text-primary-foreground gap-2"
+            size="lg"
+          >
+            <Phone className="w-5 h-5" />
+            Book via Voice
+          </Button>
+        </div>
+      </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Doctor Selection */}
@@ -165,8 +187,8 @@ export default function Appointments() {
                     selectedDate === day
                       ? "bg-primary text-primary-foreground"
                       : day < 12
-                      ? "text-muted-foreground/50 cursor-not-allowed"
-                      : "text-foreground"
+                        ? "text-muted-foreground/50 cursor-not-allowed"
+                        : "text-foreground"
                   )}
                   disabled={day < 12}
                 >
@@ -267,6 +289,13 @@ export default function Appointments() {
           </p>
         </motion.div>
       </div>
+
+      {/* Voice Booking Widget */}
+      <VoiceBookingWidget
+        isOpen={isVoiceBookingOpen}
+        onClose={() => setIsVoiceBookingOpen(false)}
+        onBookingComplete={handleVoiceBookingComplete}
+      />
     </Layout>
   );
 }

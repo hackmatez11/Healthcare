@@ -1,0 +1,256 @@
+{
+    "name": "Book Appointment",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "book-appointment",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Extract and validate booking data\nconst body = $input.item.json.body || $input.item.json;\nconst {\n  session_id,\n  doctor_id,\n  doctor_name,\n  specialty,\n  date,\n  time,\n  patient_name,\n  patient_phone,\n  patient_email\n} = body;\n\n// Validate required fields\nif (!session_id || !doctor_id || !date || !time || !patient_name) {\n  return {\n    json: {\n      success: false,\n      error: 'Missing required fields'\n    }\n  };\n}\n\n// Return formatted data\nreturn {\n  json: {\n    session_id,\n    doctor_id,\n    doctor_name: doctor_name || 'Unknown Doctor',\n    specialty: specialty || 'General',\n    date,\n    time,\n    patient_name,\n    patient_phone: patient_phone || '',\n    patient_email: patient_email || ''\n  }\n};"
+            },
+            "id": "parse-validate",
+            "name": "Parse & Validate",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://edwuptavjdakjuqyrxaf.supabase.co/rest/v1/rpc/check_doctor_availability",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "sb_publishable_cHYdCX_v8CTBV0VlqaaAwQ_GR-17x_Y"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer sb_publishable_cHYdCX_v8CTBV0VlqaaAwQ_GR-17x_Y"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ p_doctor_id: $json.doctor_id, p_date: $json.date, p_time: $json.time }) }}",
+                "options": {}
+            },
+            "id": "check-availability",
+            "name": "Check Availability",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                650,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{$json.available}}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "id": "if-available",
+            "name": "If Available",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                850,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://edwuptavjdakjuqyrxaf.supabase.co/rest/v1/rpc/create_voice_booking",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "sb_publishable_cHYdCX_v8CTBV0VlqaaAwQ_GR-17x_Y"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer sb_publishable_cHYdCX_v8CTBV0VlqaaAwQ_GR-17x_Y"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ p_session_id: $node['Parse & Validate'].json.session_id, p_doctor_id: $node['Parse & Validate'].json.doctor_id, p_doctor_name: $node['Parse & Validate'].json.doctor_name, p_specialty: $node['Parse & Validate'].json.specialty, p_date: $node['Parse & Validate'].json.date, p_time: $node['Parse & Validate'].json.time, p_patient_name: $node['Parse & Validate'].json.patient_name, p_patient_phone: $node['Parse & Validate'].json.patient_phone, p_patient_email: $node['Parse & Validate'].json.patient_email }) }}",
+                "options": {}
+            },
+            "id": "create-booking",
+            "name": "Create Booking",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                1050,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Format success response\nconst bookingData = $input.item.json;\nconst patientData = $node[\"Parse & Validate\"].json;\n\nreturn {\n  json: {\n    success: true,\n    appointment_id: bookingData.appointment_id,\n    session_id: bookingData.session_id,\n    message: `Great! Your appointment with ${patientData.doctor_name} is confirmed for ${patientData.date} at ${patientData.time}. You will receive a confirmation email shortly.`,\n    booking_details: {\n      doctor: patientData.doctor_name,\n      specialty: patientData.specialty,\n      date: patientData.date,\n      time: patientData.time,\n      patient: patientData.patient_name,\n      email: patientData.patient_email,\n      phone: patientData.patient_phone\n    }\n  }\n};"
+            },
+            "id": "format-success",
+            "name": "Format Success",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1250,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Format unavailable response\nreturn {\n  json: {\n    success: false,\n    error: 'Time slot no longer available',\n    message: 'Sorry, this slot was just booked. Please choose another time.'\n  }\n};"
+            },
+            "id": "format-unavailable",
+            "name": "Format Unavailable",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                1050,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{$json}}"
+            },
+            "id": "respond-webhook",
+            "name": "Respond to Webhook",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1450,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Parse & Validate",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parse & Validate": {
+            "main": [
+                [
+                    {
+                        "node": "Check Availability",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Availability": {
+            "main": [
+                [
+                    {
+                        "node": "If Available",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "If Available": {
+            "main": [
+                [
+                    {
+                        "node": "Create Booking",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Format Unavailable",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Booking": {
+            "main": [
+                [
+                    {
+                        "node": "Format Success",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Success": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Unavailable": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {},
+    "versionId": "1",
+    "id": "book-appointment",
+    "meta": {
+        "instanceId": "your-instance-id"
+    },
+    "tags": []
+}
