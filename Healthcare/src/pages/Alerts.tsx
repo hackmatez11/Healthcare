@@ -1,199 +1,200 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Bell, Pill, Calendar, TestTube, AlertTriangle, Check, Clock, Settings, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Bell, Settings, Plus, Loader2 } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
-
-const alerts = [
-  {
-    id: 1,
-    type: "medication",
-    title: "Take Metformin",
-    description: "500mg after breakfast",
-    time: "8:00 AM",
-    status: "pending",
-    icon: Pill,
-  },
-  {
-    id: 2,
-    type: "appointment",
-    title: "Doctor's Appointment",
-    description: "Dr. Chen - General Checkup",
-    time: "Tomorrow, 10:00 AM",
-    status: "upcoming",
-    icon: Calendar,
-  },
-  {
-    id: 3,
-    type: "test",
-    title: "Blood Test Due",
-    description: "Fasting glucose test required",
-    time: "Jan 15, 2026",
-    status: "upcoming",
-    icon: TestTube,
-  },
-  {
-    id: 4,
-    type: "emergency",
-    title: "High Blood Pressure Alert",
-    description: "Reading: 150/95 mmHg",
-    time: "Just now",
-    status: "urgent",
-    icon: AlertTriangle,
-  },
-];
-
-const medicationSchedule = [
-  { name: "Metformin", dose: "500mg", times: ["8:00 AM", "8:00 PM"], taken: [true, false] },
-  { name: "Lisinopril", dose: "10mg", times: ["8:00 AM"], taken: [true] },
-  { name: "Vitamin D", dose: "1000 IU", times: ["12:00 PM"], taken: [false] },
-];
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TaskModal } from "@/components/TaskModal";
+import { TaskCard } from "@/components/TaskCard";
+import { Task } from "@/types/task";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 export default function Alerts() {
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentTask, setCurrentTask] = useState<Task | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchTasks();
+    }
+  }, [user]);
+
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setTasks(data || []);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      toast.error("Failed to load tasks");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateTask = async (values: any) => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert([{ ...values, user_id: user.id }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      setTasks([data, ...tasks]);
+      toast.success("Task created successfully");
+    } catch (error) {
+      console.error("Error creating task:", error);
+      toast.error("Failed to create task");
+    }
+  };
+
+  const handleUpdateTask = async (values: any) => {
+    if (!currentTask) return;
+    try {
+      const { data, error } = await supabase
+        .from("tasks")
+        .update(values)
+        .eq("id", currentTask.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setTasks(tasks.map((t) => (t.id === currentTask.id ? data : t)));
+      toast.success("Task updated successfully");
+      setCurrentTask(null);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      toast.error("Failed to update task");
+    }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+      if (error) throw error;
+      setTasks(tasks.filter((t) => t.id !== taskId));
+      toast.success("Task deleted successfully");
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      toast.error("Failed to delete task");
+    }
+  };
+
+  const handleStatusChange = async (taskId: string, status: Task["status"]) => {
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update({ status })
+        .eq("id", taskId);
+
+      if (error) throw error;
+
+      setTasks(
+        tasks.map((t) => (t.id === taskId ? { ...t, status } : t))
+      );
+      toast.success(`Task marked as ${status.replace("_", " ")}`);
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Failed to update status");
+    }
+  };
+
+  const openCreateModal = () => {
+    setCurrentTask(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (task: Task) => {
+    setCurrentTask(task);
+    setIsModalOpen(true);
+  };
+
+  const filteredTasks = (status: Task["status"]) => tasks.filter((t) => t.status === status);
 
   return (
     <Layout>
       <PageHeader
         icon={Bell}
-        title="Alerts & Notifications"
-        description="Stay on top of your medications, appointments, and health reminders."
+        title="Health To-Do List & Alerts"
+        description="Manage your medications, appointments, and daily health tasks."
         gradient="gradient-alert"
       />
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Active Alerts */}
+        {/* Main Todo List Area */}
         <div className="lg:col-span-2">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-2xl shadow-card border border-border p-6 mb-6"
-          >
+          <div className="bg-card rounded-2xl shadow-card border border-border p-6 min-h-[500px]">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="font-display font-semibold text-lg text-foreground">Active Alerts</h3>
-              <Button variant="outline" size="sm">
-                <Settings className="w-4 h-4 mr-2" />
-                Manage
-              </Button>
-            </div>
-
-            <div className="space-y-3">
-              {alerts.map((alert, index) => (
-                <motion.div
-                  key={alert.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className={cn(
-                    "flex items-center gap-4 p-4 rounded-xl border transition-colors",
-                    alert.status === "urgent"
-                      ? "bg-destructive/5 border-destructive/20"
-                      : alert.status === "pending"
-                      ? "bg-warning/5 border-warning/20"
-                      : "bg-muted border-border"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center",
-                      alert.status === "urgent"
-                        ? "bg-destructive/10"
-                        : alert.status === "pending"
-                        ? "bg-warning/10"
-                        : "bg-primary/10"
-                    )}
-                  >
-                    <alert.icon
-                      className={cn(
-                        "w-6 h-6",
-                        alert.status === "urgent"
-                          ? "text-destructive"
-                          : alert.status === "pending"
-                          ? "text-warning"
-                          : "text-primary"
-                      )}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-foreground">{alert.title}</h4>
-                    <p className="text-sm text-muted-foreground">{alert.description}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-foreground">{alert.time}</p>
-                    {alert.status === "pending" && (
-                      <Button size="sm" className="mt-2 gradient-primary text-primary-foreground">
-                        <Check className="w-4 h-4 mr-1" />
-                        Mark Done
-                      </Button>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Medication Schedule */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-card rounded-2xl shadow-card border border-border p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-display font-semibold text-lg text-foreground flex items-center gap-2">
-                <Pill className="w-5 h-5 text-primary" />
-                Today's Medications
-              </h3>
-              <Button variant="ghost" size="sm">
+              <h3 className="font-display font-semibold text-lg text-foreground">My Tasks</h3>
+              <Button onClick={openCreateModal} className="gradient-primary text-primary-foreground">
                 <Plus className="w-4 h-4 mr-2" />
-                Add
+                Add Task
               </Button>
             </div>
 
-            <div className="space-y-4">
-              {medicationSchedule.map((med) => (
-                <div key={med.name} className="p-4 bg-muted rounded-xl">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h4 className="font-medium text-foreground">{med.name}</h4>
-                      <p className="text-sm text-muted-foreground">{med.dose}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {med.times.map((time, idx) => (
-                      <div
-                        key={time}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm",
-                          med.taken[idx]
-                            ? "bg-success/10 text-success"
-                            : "bg-warning/10 text-warning"
-                        )}
-                      >
-                        <Clock className="w-4 h-4" />
-                        {time}
-                        {med.taken[idx] && <Check className="w-4 h-4" />}
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <Tabs defaultValue="to_complete" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 mb-6">
+                  <TabsTrigger value="to_complete">To Complete ({filteredTasks("to_complete").length})</TabsTrigger>
+                  <TabsTrigger value="in_progress">In Progress ({filteredTasks("in_progress").length})</TabsTrigger>
+                  <TabsTrigger value="completed">Completed ({filteredTasks("completed").length})</TabsTrigger>
+                </TabsList>
+
+                {["to_complete", "in_progress", "completed"].map((status) => (
+                  <TabsContent key={status} value={status} className="space-y-4">
+                    {filteredTasks(status as Task["status"]).length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground bg-muted/30 rounded-xl border border-dashed">
+                        <p>No tasks in this category.</p>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
+                    ) : (
+                      filteredTasks(status as Task["status"]).map((task) => (
+                        <motion.div
+                          key={task.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                        >
+                          <TaskCard
+                            task={task}
+                            onEdit={openEditModal}
+                            onDelete={handleDeleteTask}
+                            onStatusChange={handleStatusChange}
+                          />
+                        </motion.div>
+                      ))
+                    )}
+                  </TabsContent>
+                ))}
+              </Tabs>
+            )}
+          </div>
         </div>
 
-        {/* Settings */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="space-y-6"
-        >
+        {/* Settings & Static Info */}
+        <div className="space-y-6">
           <div className="bg-card rounded-2xl shadow-card border border-border p-5">
-            <h3 className="font-display font-semibold text-foreground mb-4">Notification Settings</h3>
+            <h3 className="font-display font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Notification Settings
+            </h3>
             <div className="space-y-4">
               {[
                 { label: "Push Notifications", enabled: true },
@@ -209,37 +210,21 @@ export default function Alerts() {
             </div>
           </div>
 
-          <div className="bg-card rounded-2xl shadow-card border border-border p-5">
-            <h3 className="font-display font-semibold text-foreground mb-4">Reminder Times</h3>
-            <div className="space-y-3">
-              {[
-                { label: "Morning", time: "8:00 AM" },
-                { label: "Afternoon", time: "2:00 PM" },
-                { label: "Evening", time: "8:00 PM" },
-              ].map((reminder) => (
-                <div
-                  key={reminder.label}
-                  className="flex items-center justify-between p-3 bg-muted rounded-xl"
-                >
-                  <span className="text-sm font-medium text-foreground">{reminder.label}</span>
-                  <span className="text-sm text-muted-foreground">{reminder.time}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <div className="bg-gradient-to-br from-coral/10 to-warning/10 rounded-2xl p-5 border border-coral/20">
-            <h4 className="font-semibold text-foreground mb-2">Emergency Contacts</h4>
+            <h4 className="font-semibold text-foreground mb-2">Did you know?</h4>
             <p className="text-sm text-muted-foreground mb-4">
-              These contacts will be notified in case of health emergencies.
+              Tracking your medication adherence can improve your health outcomes by up to 30%.
             </p>
-            <Button variant="outline" size="sm" className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Emergency Contact
-            </Button>
           </div>
-        </motion.div>
+        </div>
       </div>
+
+      <TaskModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSubmit={currentTask ? handleUpdateTask : handleCreateTask}
+        task={currentTask}
+      />
     </Layout>
   );
 }
