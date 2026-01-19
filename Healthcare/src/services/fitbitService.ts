@@ -27,15 +27,25 @@ export class FitbitService {
     return params.get('access_token');
   }
 
+  // Format date for Fitbit API (converts 'today' to YYYY-MM-DD)
+  private static formatDate(date: string): string {
+    if (date === 'today') {
+      const today = new Date();
+      return today.toISOString().split('T')[0];
+    }
+    return date;
+  }
+
   // Get heart rate data for today
   static async getHeartRateData(accessToken: string, date: string = 'today') {
     try {
+      const formattedDate = this.formatDate(date);
       console.log('Fetching heart rate data...');
-      
+
       // Try intraday data first (requires special permission)
       try {
         const intradayResponse = await axios.get(
-          `${FITBIT_API_BASE}/1/user/-/activities/heart/date/${date}/1d/1min.json`,
+          `${FITBIT_API_BASE}/1/user/-/activities/heart/date/${formattedDate}/1d/1min.json`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -49,7 +59,7 @@ export class FitbitService {
         // If intraday fails, fall back to daily summary
         console.log('Intraday data not available, using daily summary');
         const dailyResponse = await axios.get(
-          `${FITBIT_API_BASE}/1/user/-/activities/heart/date/${date}/1d.json`,
+          `${FITBIT_API_BASE}/1/user/-/activities/heart/date/${formattedDate}/1d.json`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -69,8 +79,9 @@ export class FitbitService {
   // Get activity summary for today
   static async getActivitySummary(accessToken: string, date: string = 'today') {
     try {
+      const formattedDate = this.formatDate(date);
       const response = await axios.get(
-        `${FITBIT_API_BASE}/1/user/-/activities/date/2026-01-13.json`,
+        `${FITBIT_API_BASE}/1/user/-/activities/date/${formattedDate}.json`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -87,8 +98,9 @@ export class FitbitService {
   // Get sleep data
   static async getSleepData(accessToken: string, date: string = 'today') {
     try {
+      const formattedDate = this.formatDate(date);
       const response = await axios.get(
-        `${FITBIT_API_BASE}/1.2/user/-/sleep/date/2026-01-13.json`,
+        `${FITBIT_API_BASE}/1.2/user/-/sleep/date/${formattedDate}.json`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -123,8 +135,9 @@ export class FitbitService {
   // Get heart rate variability (HRV)
   static async getHRVData(accessToken: string, date: string = 'today') {
     try {
+      const formattedDate = this.formatDate(date);
       const response = await axios.get(
-        `${FITBIT_API_BASE}/1/user/-/hrv/date/${date}.json`,
+        `${FITBIT_API_BASE}/1/user/-/hrv/date/${formattedDate}.json`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -141,8 +154,9 @@ export class FitbitService {
   // Get calories burned
   static async getCaloriesData(accessToken: string, date: string = 'today') {
     try {
+      const formattedDate = this.formatDate(date);
       const response = await axios.get(
-        `${FITBIT_API_BASE}/1/user/-/activities/calories/date/${date}/1d.json`,
+        `${FITBIT_API_BASE}/1/user/-/activities/calories/date/${formattedDate}/1d.json`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -163,13 +177,13 @@ export class FitbitService {
       const dataset = data['activities-heart-intraday'].dataset;
       // Sample every hour to reduce data points
       const hourlyData = dataset.filter((_: any, index: number) => index % 60 === 0);
-      
+
       return hourlyData.map((item: any) => ({
         time: item.time.substring(0, 5), // HH:MM format
         value: item.value,
       }));
     }
-    
+
     // Fall back to creating estimated data from resting heart rate
     if (data['activities-heart']?.[0]) {
       const restingHR = data['activities-heart'][0].value.restingHeartRate;
@@ -186,17 +200,17 @@ export class FitbitService {
         ];
       }
     }
-    
+
     return [];
   }
 
   // Format sleep data for chart
   static formatSleepDataForChart(sleepData: any) {
     if (!sleepData.sleep || sleepData.sleep.length === 0) return null;
-    
+
     const sleep = sleepData.sleep[0]; // Get main sleep session
     const levels = sleep.levels.summary;
-    
+
     return {
       deep: levels.deep?.minutes / 60 || 0,
       light: levels.light?.minutes / 60 || 0,
@@ -208,11 +222,11 @@ export class FitbitService {
   // Calculate sleep score
   static calculateSleepScore(sleepData: any): number {
     if (!sleepData.sleep || sleepData.sleep.length === 0) return 0;
-    
+
     const sleep = sleepData.sleep[0];
     const efficiency = sleep.efficiency || 0;
     const duration = sleep.duration / 3600000; // Convert to hours
-    
+
     // Simple scoring: efficiency * 0.7 + (duration >= 7 ? 30 : duration * 4.3)
     const durationScore = duration >= 7 ? 30 : duration * 4.3;
     return Math.round(efficiency * 0.7 + durationScore);
